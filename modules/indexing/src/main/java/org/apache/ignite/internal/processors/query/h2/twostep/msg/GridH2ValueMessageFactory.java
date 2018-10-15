@@ -91,6 +91,9 @@ public class GridH2ValueMessageFactory implements MessageFactory {
 
             case -22:
                 return new GridH2CacheObject();
+                
+            case -23:
+            	return new GridH2Json();
 
             case -30:
                 return new GridH2IndexRangeRequest();
@@ -210,6 +213,9 @@ public class GridH2ValueMessageFactory implements MessageFactory {
 
             case Value.ARRAY:
                 return new GridH2Array(v);
+                
+            case Value.JSON:
+            	return new GridH2Json(v);
 
             case Value.JAVA_OBJECT:
                 if (v instanceof GridH2ValueCacheObject)

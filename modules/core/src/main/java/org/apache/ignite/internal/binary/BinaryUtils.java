@@ -19,6 +19,7 @@ package org.apache.ignite.internal.binary;
 
 import java.io.ByteArrayInputStream;
 import java.io.Externalizable;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
@@ -72,6 +73,9 @@ import org.apache.ignite.internal.util.typedef.internal.U;
 import org.apache.ignite.lang.IgniteBiTuple;
 import org.apache.ignite.lang.IgniteUuid;
 import org.jetbrains.annotations.Nullable;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.ignite.IgniteSystemProperties.IGNITE_BINARY_MARSHALLER_USE_STRING_SERIALIZATION_VER_2;
@@ -153,6 +157,7 @@ public class BinaryUtils {
     /** FNV1 hash prime. */
     private static final int FNV1_PRIME = 0x01000193;
 
+    private static final int TYPES_ARRAY_SIZE = 105;
     /*
      * Static class initializer.
      */
@@ -171,6 +176,7 @@ public class BinaryUtils {
         PLAIN_CLASS_TO_FLAG.put(Date.class, GridBinaryMarshaller.DATE);
         PLAIN_CLASS_TO_FLAG.put(Timestamp.class, GridBinaryMarshaller.TIMESTAMP);
         PLAIN_CLASS_TO_FLAG.put(Time.class, GridBinaryMarshaller.TIME);
+        PLAIN_CLASS_TO_FLAG.put(JsonNode.class, GridBinaryMarshaller.JSON);
 
         PLAIN_CLASS_TO_FLAG.put(byte[].class, GridBinaryMarshaller.BYTE_ARR);
         PLAIN_CLASS_TO_FLAG.put(short[].class, GridBinaryMarshaller.SHORT_ARR);
@@ -204,7 +210,7 @@ public class BinaryUtils {
             GridBinaryMarshaller.CHAR, GridBinaryMarshaller.BOOLEAN, GridBinaryMarshaller.DECIMAL, GridBinaryMarshaller.STRING, GridBinaryMarshaller.UUID, GridBinaryMarshaller.DATE, GridBinaryMarshaller.TIMESTAMP, GridBinaryMarshaller.TIME,
             GridBinaryMarshaller.BYTE_ARR, GridBinaryMarshaller.SHORT_ARR, GridBinaryMarshaller.INT_ARR, GridBinaryMarshaller.LONG_ARR, GridBinaryMarshaller.FLOAT_ARR, GridBinaryMarshaller.DOUBLE_ARR, GridBinaryMarshaller.TIME_ARR,
             GridBinaryMarshaller.CHAR_ARR, GridBinaryMarshaller.BOOLEAN_ARR, GridBinaryMarshaller.DECIMAL_ARR, GridBinaryMarshaller.STRING_ARR, GridBinaryMarshaller.UUID_ARR, GridBinaryMarshaller.DATE_ARR, GridBinaryMarshaller.TIMESTAMP_ARR,
-            GridBinaryMarshaller.ENUM, GridBinaryMarshaller.ENUM_ARR, GridBinaryMarshaller.NULL}) {
+            GridBinaryMarshaller.ENUM, GridBinaryMarshaller.ENUM_ARR, GridBinaryMarshaller.NULL, GridBinaryMarshaller.JSON}) {
 
             PLAIN_TYPE_FLAG[b] = true;
         }
@@ -237,8 +243,9 @@ public class BinaryUtils {
         BINARY_CLS.add(Timestamp[].class);
         BINARY_CLS.add(Time[].class);
         BINARY_CLS.add(BigDecimal[].class);
+        BINARY_CLS.add(JsonNode.class);
 
-        FIELD_TYPE_NAMES = new String[104];
+        FIELD_TYPE_NAMES = new String[TYPES_ARRAY_SIZE];
 
         FIELD_TYPE_NAMES[GridBinaryMarshaller.BYTE] = "byte";
         FIELD_TYPE_NAMES[GridBinaryMarshaller.SHORT] = "short";
@@ -277,6 +284,8 @@ public class BinaryUtils {
         FIELD_TYPE_NAMES[GridBinaryMarshaller.OBJ_ARR] = "Object[]";
         FIELD_TYPE_NAMES[GridBinaryMarshaller.ENUM_ARR] = "Enum[]";
         FIELD_TYPE_NAMES[GridBinaryMarshaller.BINARY_ENUM] = "Enum";
+        FIELD_TYPE_NAMES[GridBinaryMarshaller.JSON] = "json";
+        
 
         if (wrapTrees()) {
             CLS_TO_WRITE_REPLACER.put(TreeMap.class, new BinaryTreeMapWriteReplacer());
@@ -1296,6 +1305,36 @@ public class BinaryUtils {
         in.position(pos + strLen);
 
         return res;
+    }
+    
+    public static JsonNode doReadJson(BinaryInputStream in) {
+    	String readed;
+    	if (!in.hasArray()) {
+            byte[] arr = doReadByteArray(in);
+
+            if (USE_STR_SERIALIZATION_VER_2)
+                readed =  utf8BytesToStr(arr, 0, arr.length);
+            else
+                readed = new String(arr, UTF_8);
+        }
+
+        int strLen = in.readInt();
+
+        int pos = in.position();
+
+        if (USE_STR_SERIALIZATION_VER_2)
+        	readed = utf8BytesToStr(in.array(), pos, strLen);
+        else
+            readed = new String(in.array(), pos, strLen, UTF_8);
+
+        in.position(pos + strLen);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+        	JsonNode res = mapper.readTree(readed);
+        	return res;
+        } catch (IOException e) {
+        	throw new BinaryObjectException("Cannot read json");
+        }
     }
 
     /**

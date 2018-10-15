@@ -40,6 +40,8 @@ import org.apache.ignite.internal.util.typedef.internal.A;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.jetbrains.annotations.Nullable;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -140,7 +142,7 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
      * @throws org.apache.ignite.binary.BinaryObjectException In case of error.
      */
     void marshal(Object obj, boolean enableReplace) throws BinaryObjectException {
-        String newName = ctx.configuration().getIgniteInstanceName();
+    	String newName = ctx.configuration().getIgniteInstanceName();
         String oldName = IgniteUtils.setCurrentIgniteName(newName);
 
         try {
@@ -479,6 +481,19 @@ public class BinaryWriterExImpl implements BinaryWriter, BinaryRawWriterEx, Obje
             out.unsafeWriteByte(GridBinaryMarshaller.TIME);
             out.unsafeWriteLong(time.getTime());
         }
+    }
+    
+    public void doWriteJson(@Nullable JsonNode json) {
+    	if (json == null) {
+    		out.writeByte(GridBinaryMarshaller.NULL);
+    	} else {
+    		byte[] arr = json.toString().getBytes();
+    		out.unsafeEnsure(1 + 4);
+    		out.unsafeWriteByte(GridBinaryMarshaller.JSON);
+    		out.unsafeWriteInt(arr.length);
+    		out.writeByteArray(arr);
+    	}
+    	
     }
 
     /**

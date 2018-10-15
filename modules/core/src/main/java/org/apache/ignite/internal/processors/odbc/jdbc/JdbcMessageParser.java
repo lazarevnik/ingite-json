@@ -17,7 +17,9 @@
 
 package org.apache.ignite.internal.processors.odbc.jdbc;
 
+import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.GridKernalContext;
+import org.apache.ignite.internal.binary.BinaryContext;
 import org.apache.ignite.internal.binary.BinaryReaderExImpl;
 import org.apache.ignite.internal.binary.BinaryWriterExImpl;
 import org.apache.ignite.internal.binary.streams.BinaryHeapInputStream;
@@ -59,7 +61,7 @@ public class JdbcMessageParser implements ClientListenerMessageParser {
      * @return Writer.
      */
     protected BinaryWriterExImpl createWriter(int cap) {
-        return new BinaryWriterExImpl(null, new BinaryHeapOutputStream(cap), null, null);
+    	return new BinaryWriterExImpl(null, new BinaryHeapOutputStream(cap), null, null);
     }
 
     /** {@inheritDoc} */

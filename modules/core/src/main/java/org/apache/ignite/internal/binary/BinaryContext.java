@@ -120,6 +120,8 @@ import org.apache.ignite.marshaller.MarshallerContext;
 import org.apache.ignite.marshaller.MarshallerUtils;
 import org.jetbrains.annotations.Nullable;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import static org.apache.ignite.internal.MarshallerPlatformIds.JAVA_ID;
 
 /**
@@ -300,6 +302,7 @@ public class BinaryContext {
         registerPredefinedType(Timestamp.class, GridBinaryMarshaller.TIMESTAMP);
         registerPredefinedType(Time.class, GridBinaryMarshaller.TIME);
         registerPredefinedType(UUID.class, GridBinaryMarshaller.UUID);
+        registerPredefinedType(JsonNode.class, GridBinaryMarshaller.JSON);
 
         registerPredefinedType(byte[].class, GridBinaryMarshaller.BYTE_ARR);
         registerPredefinedType(short[].class, GridBinaryMarshaller.SHORT_ARR);

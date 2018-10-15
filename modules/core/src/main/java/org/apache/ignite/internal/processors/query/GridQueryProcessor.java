@@ -694,7 +694,7 @@ public class GridQueryProcessor extends GridProcessorAdapter {
                 Collection<QueryTypeCandidate> cands = new ArrayList<>();
 
                 Collection<QueryEntity> qryEntities = schema.entities();
-
+                
                 if (!F.isEmpty(qryEntities)) {
                     for (QueryEntity qryEntity : qryEntities) {
                         QueryTypeCandidate cand = QueryUtils.typeForQueryEntity(cacheName, schemaName, cctx, qryEntity,

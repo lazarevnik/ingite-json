@@ -17,6 +17,7 @@
 
 package org.apache.ignite.internal.processors.odbc;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -27,6 +28,11 @@ import org.apache.ignite.internal.binary.BinaryUtils;
 import org.apache.ignite.internal.binary.BinaryWriterExImpl;
 import org.apache.ignite.internal.binary.GridBinaryMarshaller;
 import org.jetbrains.annotations.Nullable;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 
 /**
  * Binary reader with marshaling non-primitive and non-embedded objects with JDK marshaller.
@@ -42,7 +48,7 @@ public abstract class SqlListenerUtils {
     @Nullable public static Object readObject(BinaryReaderExImpl reader, boolean binObjAllow)
         throws BinaryObjectException {
         byte type = reader.readByte();
-
+        
         switch (type) {
             case GridBinaryMarshaller.NULL:
                 return null;
@@ -130,6 +136,11 @@ public abstract class SqlListenerUtils {
 
             case GridBinaryMarshaller.DATE_ARR:
                 return BinaryUtils.doReadDateArray(reader.in());
+              
+            case GridBinaryMarshaller.JSON: {
+            		JsonNode json = BinaryUtils.doReadJson(reader.in());
+                	return json;
+            }
 
             default:
                 reader.in().position(reader.in().position() - 1);
@@ -213,6 +224,9 @@ public abstract class SqlListenerUtils {
             writer.writeTimestampArray((Timestamp[])obj);
         else if (cls == java.util.Date[].class || cls == java.sql.Date[].class)
             writer.writeDateArray((java.util.Date[])obj);
+        else if (obj instanceof JsonNode) {
+        	writer.writeString(obj.toString());
+        }
         else if (binObjAllow)
             writer.writeObjectDetached(obj);
         else
@@ -251,6 +265,7 @@ public abstract class SqlListenerUtils {
             || cls == UUID[].class
             || cls == Time[].class
             || cls == Timestamp[].class
-            || cls == java.util.Date[].class || cls == java.sql.Date[].class;
+            || cls == java.util.Date[].class || cls == java.sql.Date[].class
+            || cls.isInstance(JsonNode.class);
     }
 }

@@ -21,6 +21,7 @@ import org.apache.ignite.internal.util.typedef.internal.S;
 import org.h2.util.LocalDateTimeUtils;
 import org.h2.value.DataType;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -83,7 +84,10 @@ public enum H2DatabaseType {
     GEOMETRY("GEOMETRY"),
 
     /** */
-    OTHER("OTHER");
+    OTHER("OTHER"),
+	
+	/** */
+	JSON("JSON");
 
     /** Map of Class to enum. */
     private static final Map<Class<?>, H2DatabaseType> map = new HashMap<>();
@@ -114,6 +118,7 @@ public enum H2DatabaseType {
         map.put(String.class, VARCHAR);
         map.put(java.util.UUID.class, UUID);
         map.put(byte[].class, BINARY);
+        map.put(JsonNode.class, JSON);
     }
 
     /** */
@@ -136,9 +141,10 @@ public enum H2DatabaseType {
      */
     public static H2DatabaseType fromClass(Class<?> cls) {
         H2DatabaseType res = map.get(cls);
-
-        if (res != null)
+        
+        if (res != null) { 	
             return res;
+        }
 
         if (DataType.isGeometryClass(cls))
             return GEOMETRY;
